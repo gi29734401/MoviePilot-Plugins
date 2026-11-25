@@ -1,72 +1,97 @@
-# MoviePilot 插件仓库（本地/自建）
+# MoviePilot-Plugins
 
-MoviePilot V3 插件源。把这个地址加入 MoviePilot 的 `PLUGIN_MARKET`（设置 → 插件 → 插件市场仓库）即可在插件市场安装、更新。
+MoviePilot 官方插件仓库，也是默认插件市场的源码与索引仓库：
+<https://github.com/jxxghp/MoviePilot-Plugins>
 
-```
-https://github.com/gi29734401/MoviePilot-Plugins
-```
+当前开发目标是 MoviePilot V3。新插件开发者不需要先阅读 V2 文档，也不要在多份
+“适配指南”之间自行拼接流程。
 
-## 插件列表
+## 从这里开始
 
-| 插件 | 说明 |
-| --- | --- |
-| **群晖图片桥**（`SynologyImageBridge`） | 为 Synology Chat 等外部渠道提供**带图片扩展名**、**免登录**的图片地址：原图落盘缓存，按保留天数与容量上限自动清理，附 Vue 配置页与缓存统计页 |
+### 开发一个新的 V3 插件
 
-## 群晖图片桥（SynologyImageBridge）
+阅读 [MoviePilot 插件开发指南（V3）](./docs/Plugin_Development.md)。这是当前唯一的
+完整主指南，覆盖目录、最小骨架、生命周期、稳定 SDK、配置与数据、V3 数据库事务、
+页面、事件、API、服务、测试和发布。
 
-### 解决什么问题
+### 把旧插件迁移到 V3
 
-Synology Chat 的 incoming webhook 只接受**路径以图片扩展名结尾**的 `file_url`：
+先阅读主指南，再查看
+[V2 插件迁移到 V3](./docs/V3_Plugin_Adaptation.md)。迁移专题只讲旧导入兼容、
+数据库事务、媒体身份、音乐链、数据迁移和 V3 合同差异，不再承担从零开发说明。
 
-- `https://emby.example.com/Items/123/Images/Backdrop` → 没有扩展名 → 返回 `{"error":{"code":117}}`，**整条消息被丢弃**（连文字一起丢）；
-- `https://example.com/x.jpg` → 正常发送。
+### 维护官方仓库或发布版本
 
-而 MoviePilot 的媒体库通知把 Emby/Jellyfin 的图片地址原样塞进 `file_url`，于是群晖渠道的通知全部失败。
+查看 [仓库与发布指南](./docs/Repository_Guide.md)，了解索引、版本选择、元数据、
+CI、Release 和跨仓协作边界。
 
-本插件在 MoviePilot 侧提供图片网关：
+### 按具体功能查示例
 
-```
-群晖 → https://<mp>/api/v1/plugin/SynologyImageBridge/img/<摘要>.webp?src=<源地址>
-        ↓ 命中缓存直接返回；未命中则按需下载原图并落盘
-      原图（不压缩）
-```
+查看 [常见问题](./docs/FAQ.md)。API 返回与前端调用另见
+[插件 API 专题](./docs/V3_API_Response_Adaptation.md)。
 
-- **不压缩原图**，仅按保留天数 / 容量上限清理；
-- 只接受**已配置媒体服务器**（含外网播放地址）的图片主机，外加 Emby/Plex/Jellyfin 官方兜底图标主机，不做任意 URL 代理；
-- 匿名路由只接受本插件写出的 `<32位摘要>.<后缀>` 文件，不存在即 404。
+### 仍然维护 V2 插件
 
-### 配置项
+[V2 插件开发指南](./docs/V2_Plugin_Development.md) 仅作为历史版本参考。新插件和
+V3 专用实现不要从该文档开始。
 
-| 配置 | 说明 |
-| --- | --- |
-| 启用插件 | 开关；关闭后图片网关不响应 |
-| 缓存保留天数 | 默认 7 天，范围 1–365 |
-| 缓存容量上限 | 默认 512 MB，范围 16–20480；超限时按写入时间删最旧 |
-| 额外允许的图片主机 | 每行一个主机名；已配置的媒体服务器主机默认允许 |
+## 仓库负责什么
 
-### 详情页
+本仓库不是独立运行时：
 
-详情页展示缓存张数、占用空间、命中率、最近写入条目与容量占用条，并提供「清空缓存」。
+- `MoviePilot` 负责插件加载、事件分发、API、服务、数据、工作流和 Agent 运行时。
+- `MoviePilot-Frontend` 负责配置页、详情页、仪表板和 Vue 联邦组件渲染。
+- `MoviePilot-Plugins` 负责插件源码、市场索引、图标、测试、文档和发布流程。
 
-### 配合的核心改动
+## 当前目录
 
-群晖渠道原先直接发送 `file_url`，需要配合 MoviePilot 侧改动：
-
-1. 通知图片改写为图片桥地址（路径带扩展名）；
-2. 带图发送失败时自动去掉图片、降级为纯文本重发；
-3. `[查看详情](url)` 改为 `查看详情：url`（群晖不解析 Markdown 链接）。
-
-## 本地开发
-
-```bash
-# 前端（Vue 联邦）
-cd frontend
-npm install
-npm run build     # 产物输出到 plugins.v3/synologyimagebridge/dist
+```text
+MoviePilot-Plugins/
+├── plugins.v3/              # 当前 V3 专用插件，新插件放这里
+├── tests/v3/                # V3 插件测试
+├── package.v3.json          # V3 插件市场索引
+├── plugins.v2/              # V2 历史专用实现
+├── package.v2.json          # V2 历史索引
+├── plugins/                 # 更早或跨版本的存量实现
+├── package.json             # 默认历史索引
+├── icons/                   # 插件图标
+├── docs/                    # 开发、迁移、FAQ 和发布文档
+└── .github/                 # CI 与 Release 工作流
 ```
 
-MoviePilot 侧把本仓库目录加入本地插件源：
+V3 新插件使用 `plugins.v3/<plugin_id_lower>/`、`tests/v3/<plugin_id_lower>/` 和
+`package.v3.json`。V3 对旧插件的回退加载只用于兼容存量实现，不是新插件继续写入
+旧目录的理由。
 
-```
-PLUGIN_LOCAL_REPO_PATHS=/config/local-plugins
-```
+## 最重要的提交规则
+
+- 插件目录名必须是插件主类名的小写形式，主类定义在目录的 `__init__.py`。
+- 新增类和方法需要补充说明职责的注释。
+- `plugin_version`、索引 `version` 和最新 `history` 必须一致。
+- 当前版本历史置顶，所有历史按语义版本降序排列。
+- V3 新代码优先使用 `app.sdk`；不要新增对宿主内部目录布局的无必要依赖。
+- 宿主数据通过 Oper、Chain 或稳定 SDK 访问；不要直接操作宿主 Model，也不要自行持有
+  `SessionFactory` 等裸会话工厂。数据库事务装饰器只用于插件自有表。
+- 插件运行数据写入插件数据目录，不要写回源码目录。
+- V3 第三方依赖写入插件 `pyproject.toml`，不提交插件 `uv.lock`；V1/V2 保留 `requirements.txt`。
+- 第三方依赖安装在宿主共享环境，不能降级或覆盖 MoviePilot 核心依赖，也不要由插件直接执行包管理器。
+- 测试放在仓库根 `tests/v3/<plugin_id>/`，不要放进插件源码目录。
+- 提交前运行 Python 编译、版本门禁、相关测试和 `git diff --check`。
+
+## 第三方插件仓库
+
+第三方仓库建议 fork 本项目并保留相同目录和索引结构。MoviePilot 插件市场只读取
+GitHub 仓库的 `main` 分支；仓库地址通过 `PLUGIN_MARKET` 配置，多个地址用逗号
+分隔。
+
+请勿开发用于破解 MoviePilot 用户认证，或提供色情、赌博等违法违规内容的插件。
+
+## 常用链接
+
+- [完整 V3 开发指南](./docs/Plugin_Development.md)
+- [V2 插件迁移到 V3](./docs/V3_Plugin_Adaptation.md)
+- [插件 API 专题](./docs/V3_API_Response_Adaptation.md)
+- [仓库与发布指南](./docs/Repository_Guide.md)
+- [FAQ 索引](./docs/FAQ.md)
+- [插件仓测试说明](./tests/README.md)
+- [MoviePilot-Frontend V3 模块联邦指南](https://github.com/jxxghp/MoviePilot-Frontend/blob/v3/docs/module-federation-guide.md)
