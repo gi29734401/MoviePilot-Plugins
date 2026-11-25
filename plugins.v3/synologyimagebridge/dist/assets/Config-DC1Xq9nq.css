@@ -1,0 +1,21 @@
+
+.bridge-config[data-v-d1a282c8] {
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+.bridge-config__header[data-v-d1a282c8] {
+  padding: 18px 20px;
+  background: linear-gradient(135deg, rgba(25, 118, 210, 0.16), rgba(0, 172, 193, 0.12));
+  border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+.bridge-config__title[data-v-d1a282c8] {
+  display: flex;
+  align-items: center;
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+.bridge-config__subtitle[data-v-d1a282c8] {
+  margin-top: 6px;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  opacity: 0.75;
+}
